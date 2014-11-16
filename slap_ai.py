@@ -93,6 +93,26 @@ class slap_ai(znc.Module):
         allowed = channel in self.accept_channels
         return allowed or len(self.accept_channels) == 0
 
+    def is_name_ok(self, name, channel=False):
+        """Check if nick/channel name contains valid characters"""
+        # Valid character set will probably change in the future
+        #self.PutModule('called validity check: ' + name + ' ' + str(channel))
+        if name == '':
+            return False
+        if channel and (name[0] != '#' or name == '#'):
+            return False
+        valid = True
+        if channel:
+            name = name[1:]
+        for char in name:
+            if char.isalnum():
+                continue
+            if char in '-_.':
+                continue
+            valid = False
+            break
+        return valid
+
     def OnChanAction(self, nick, channel, message):
         """Auto-executed by ZNC when there's an action on any channel""" 
         # Check if it's time to slap back
@@ -145,7 +165,7 @@ class slap_ai(znc.Module):
                     if command == 'nickadd' else self.accept_channels
             if len(args) == 2:
                 if not args[1].lower() in tuple(map(str.lower, curlist)):
-                    #if args[1].isalnum():
+                    if self.is_name_ok(args[1], command=='chanadd'):
                         curlist.append(args[1])
                         self.update_lists_in_registry()
                         self.PutModule('Add successful')
